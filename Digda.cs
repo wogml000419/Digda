@@ -86,11 +86,6 @@ namespace Digda
             PrintSpaces(depth);
             Console.WriteLine($"[Calculating Size] : {dir.FullName}");
 
-            long size = 0;
-            string logPath = DigdaLog.GetLogFilePath(dir.FullName);
-            FileStream writingFile = new FileStream(logPath, FileMode.Create);
-            StreamWriter writer = new StreamWriter(writingFile);
-
             FileInfo[] subFiles = null;
             DirectoryInfo[] subDirectories = null;
 
@@ -105,6 +100,16 @@ namespace Digda
                 Console.WriteLine($"[Error] : Access at {dir.FullName} is denied");
                 return 0;
             }
+
+            if(subFiles.Length == 0 && subDirectories.Length == 0)
+            {
+                return 0;           //빈 폴더일 경우 파일을 만들지 않습니다.
+            }
+
+            long size = 0;
+            string logPath = DigdaLog.GetLogFilePath(dir.FullName);
+            FileStream writingFile = new FileStream(logPath, FileMode.Create);
+            StreamWriter writer = new StreamWriter(writingFile);
 
             foreach (FileInfo subFile in subFiles)
             {
@@ -134,6 +139,9 @@ namespace Digda
 
             writer.Close();
             writingFile.Close();
+
+
+
             return size;
         }
 

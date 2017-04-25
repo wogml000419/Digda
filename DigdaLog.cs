@@ -3,7 +3,7 @@ using System.IO;
 
 namespace Digda
 {
-    public static class DigdaLog    //변경사항 저장해야함
+    public static class DigdaLog    //변경사항 저장해야함 & 빈 폴더는 로그 안 만드는걸로?
     {
         private static char separator = Path.DirectorySeparatorChar;
         private static string programDirPath = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().CodeBase).Replace(@"file:\", "");
@@ -47,6 +47,10 @@ namespace Digda
         public static void AddLogContent(string fileFullPath)
         {
             string path = GetLogFilePath(Path.GetDirectoryName(fileFullPath));
+            if(File.Exists(path) == false)
+            {
+                WriteEmptyFolderLog(Path.GetDirectoryName(fileFullPath), path);
+            }
 
             List<string> list = ReadLogFile(path);
             int last = list.Count - 1;
@@ -217,6 +221,17 @@ namespace Digda
             reader.Close();
             stream.Close();
             return r;
+        }
+
+        private static void WriteEmptyFolderLog(string dirPath, string filePath)
+        {
+            FileStream stream = new FileStream(filePath, FileMode.Create);
+            StreamWriter writer = new StreamWriter(stream);
+
+            writer.WriteLine(MakeThisDirInfos(dirPath, 0, 0));
+
+            writer.Close();
+            stream.Close();
         }
 
 
