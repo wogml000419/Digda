@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Collections.Generic;
 
 namespace Digda
 {
@@ -25,8 +24,15 @@ namespace Digda
                 }
                 if (Array.Exists(options, c => c == 'a' || c == 'A'))   //-a는 현재 디렉토리부터 하위 디렉토리/폴더들을 모두 탐색해 로그를 갱신합니다.
                 {
-                    Console.WriteLine($"Calculated Size: ({GetDirectorySize(current, 0)}byte(s)) {current.FullName}");
+                    Console.WriteLine($"[Calculated Size] : ({GetDirectorySize(current, 0)}byte(s)) {current.FullName}");
                 }
+            }
+
+            if (File.Exists(DigdaLog.GetLogFilePath(current.FullName)) == false)
+            {
+                Console.WriteLine("Current Directory's log file does not exist");
+                Console.WriteLine("Creating log files...");
+                Console.WriteLine($"[Calculated Size] : ({GetDirectorySize(current, 0)}byte(s)) {current.FullName}");
             }
 
             FileSystemWatcher watcher = new FileSystemWatcher(current.FullName, "*.*")
@@ -75,7 +81,7 @@ namespace Digda
         public static long GetDirectorySize(DirectoryInfo dir, int depth)
         {
             PrintSpaces(depth);
-            Console.WriteLine($"Calculating Size: {dir.FullName}");
+            Console.WriteLine($"[Calculating Size] : {dir.FullName}");
 
             long size = 0;
             string logPath = DigdaLog.GetLogFilePath(dir.FullName);
@@ -93,14 +99,14 @@ namespace Digda
             catch (UnauthorizedAccessException)
             {
                 PrintSpaces(depth);
-                Console.WriteLine($"[Error] Access at {dir.FullName} is denied");
+                Console.WriteLine($"[Error] : Access at {dir.FullName} is denied");
                 return 0;
             }
 
             foreach (FileInfo subFile in subFiles)
             {
                 PrintSpaces(depth + 1);
-                Console.WriteLine($"Found File: ({subFile.Length}byte(s)) {subFile.Name}" /*"in {dir.FullName}"*/);
+                Console.WriteLine($"Found File : ({subFile.Length}byte(s)) {subFile.Name}" /*"in {dir.FullName}"*/);
 
                 writer.WriteLine(DigdaLog.MakeFileInfos(subFile, 0));
 
@@ -110,13 +116,13 @@ namespace Digda
             foreach (DirectoryInfo subDir in subDirectories)
             {
                 PrintSpaces(depth + 1);
-                Console.WriteLine($"Found Directory: {subDir.Name}" /*"in {dir.FullName}"*/);
+                Console.WriteLine($"Found Directory : {subDir.Name}" /*"in {dir.FullName}"*/);
 
                 long dirSize = GetDirectorySize(subDir, depth + 1);
                 size += dirSize;
 
                 PrintSpaces(depth + 1);
-                Console.WriteLine($"Calculated Size: ({dirSize}byte(s)) {subDir.FullName}");
+                Console.WriteLine($"Calculated Size : ({dirSize}byte(s)) {subDir.FullName}");
 
                 writer.WriteLine(DigdaLog.MakeDirectoryInfos(subDir, dirSize, 0));
             }

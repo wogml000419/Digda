@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 
 namespace Digda
@@ -147,7 +146,7 @@ namespace Digda
             writer.Close();
             stream.Close();
 
-            if (Directory.Exists(fileFullPath))
+            if (File.Exists(GetLogFilePath(fileFullPath)))
             {
                 File.Delete(GetLogFilePath(fileFullPath));
             }
