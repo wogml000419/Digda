@@ -1,11 +1,14 @@
 ﻿using System;
 using System.IO;
+using System.Text.RegularExpressions;
 
 namespace Digda
 {
     public static class Digda
     {
-        public static int Main(string[] args)       //로그파일이 없을 때 자동으로 다시 계산해야함 
+        private static string[] excludeFiles = { @"^.*\.dig$" }; 
+
+        public static int Main(string[] args)       //변경 내역을 최종적으로는 로그 파일에 작성하도록
         {
             DirectoryInfo current = new DirectoryInfo(Directory.GetCurrentDirectory());
             char[] options = null;
@@ -106,7 +109,7 @@ namespace Digda
             foreach (FileInfo subFile in subFiles)
             {
                 PrintSpaces(depth + 1);
-                Console.WriteLine($"Found File : ({subFile.Length}byte(s)) {subFile.Name}" /*"in {dir.FullName}"*/);
+                Console.WriteLine($"Found File : ({subFile.Length}byte(s)) {subFile.Name}");
 
                 writer.WriteLine(DigdaLog.MakeFileInfos(subFile, 0));
 
@@ -116,7 +119,7 @@ namespace Digda
             foreach (DirectoryInfo subDir in subDirectories)
             {
                 PrintSpaces(depth + 1);
-                Console.WriteLine($"Found Directory : {subDir.Name}" /*"in {dir.FullName}"*/);
+                Console.WriteLine($"Found Directory : {subDir.Name}");
 
                 long dirSize = GetDirectorySize(subDir, depth + 1);
                 size += dirSize;
@@ -137,6 +140,10 @@ namespace Digda
 
         private static void OnChanged(object source, FileSystemEventArgs e)
         {
+            foreach (string pattern in excludeFiles)
+                if (Regex.IsMatch(e.Name, pattern))
+                    return;
+
             Console.WriteLine($"[{e.ChangeType}] : {e.FullPath}");
 
             if (e.ChangeType == WatcherChangeTypes.Created)
@@ -155,6 +162,10 @@ namespace Digda
 
         private static void OnRenamed(object source, RenamedEventArgs e)
         {
+            foreach (string pattern in excludeFiles)
+                if (Regex.IsMatch(e.Name, pattern))
+                    return;
+
             Console.WriteLine($"[Renamed] {e.OldFullPath} -> {e.FullPath}");
             DigdaLog.RenameLogContent(e.OldFullPath, e.FullPath);
         }
