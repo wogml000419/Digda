@@ -179,7 +179,7 @@ namespace Digda
 
             if (File.Exists(GetLogFilePath(fileFullPath)))
             {
-                File.Delete(GetLogFilePath(fileFullPath));
+                DeleteLogAndChilds(fileFullPath);
             }
 
             if (removeSize != 0)
@@ -273,6 +273,24 @@ namespace Digda
             stream.Close();
         }
 
+        private static void DeleteLogAndChilds(string dirPath)
+        {
+            string logFilePath = GetLogFilePath(dirPath);
+            if (File.Exists(logFilePath) == false)
+                return;
+
+            List<string> list = ReadLogFile(logFilePath);
+
+            foreach(string s in list)
+            {
+                if(s.StartsWith("[Directory]"))
+                {
+                    DeleteLogAndChilds(dirPath + separator + GetFileName(s));
+                }
+            }
+
+            File.Delete(logFilePath);
+        }
 
         private static string GetFileName(string info)
         {
