@@ -1,9 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.IO;
+using System.Text;
 
 namespace Digda
 {
-    public static class DigdaLog    //변경사항 저장해야함 & 빈 폴더는 로그 안 만드는걸로?
+    public static class DigdaLog    //변경사항 저장해야함
     {
         private static char separator = Path.DirectorySeparatorChar;
         private static string programDirPath = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().CodeBase).Replace(@"file:\", "");
@@ -15,6 +16,16 @@ namespace Digda
             return logSaveDirPath + separator + path.Replace(separator, '@').Replace(":", "") + ".dig";
         }
 
+        public static string GetParentLogFilePath(string logFileName)
+        {
+            StringBuilder sb = new StringBuilder();
+            string[] array = logFileName.Split('@');
+            for(int i=0; i<array.Length - 1; i++)
+            {
+                sb.Append(array[i]);
+            }
+            return logSaveDirPath + separator + sb.ToString() + ".dig";
+        }
 
         public static string MakeFileInfos(FileInfo file, long addSize)
         {
@@ -47,7 +58,7 @@ namespace Digda
         public static void AddLogContent(string fileFullPath)
         {
             string path = GetLogFilePath(Path.GetDirectoryName(fileFullPath));
-            if(File.Exists(path) == false)
+            if (File.Exists(path) == false)
             {
                 WriteEmptyFolderLog(Path.GetDirectoryName(fileFullPath), path);
             }
@@ -56,7 +67,6 @@ namespace Digda
             int last = list.Count - 1;
 
             string content = null;
-            bool isWrote = false;
 
             if (File.Exists(fileFullPath))
             {
@@ -74,78 +84,95 @@ namespace Digda
 
             if (diff != 0)
             {
-                list[last] = AddSizeToAddSize(AddSizeToSize(list[last], diff), diff);
+                list[last] = AddSizeToBoth(list[last], diff);
             }
-
-            FileStream stream = new FileStream(path, FileMode.Create);
-            StreamWriter writer = new StreamWriter(stream);
-
-            foreach (string s in list)
-            {
-                if (isWrote == false && FileInfoCompare(content, s) < 0)
-                {
-                    writer.WriteLine(content);
-                    isWrote = true;
-                }
-                writer.WriteLine(s);
-            }
-
-            writer.Close();
-            stream.Close();
-        }
-
-        public static void ChangeLogContent(string fileFullPath)      //여기엔 파일밖에 안 들어오겠지..?
-        {
-            string path = GetLogFilePath(Path.GetDirectoryName(fileFullPath));
-
-            List<string> list = ReadLogFile(path);
 
             FileStream stream = new FileStream(path, FileMode.Create);
             StreamWriter writer = new StreamWriter(stream);
 
             for (int i = 0; i < list.Count; i++)
             {
-                if (GetFileName(list[i]).Equals(Path.GetFileName(fileFullPath)))
+                if (FileInfoCompare(content, list[i]) < 0)
                 {
-
-                    FileInfo file = new FileInfo(fileFullPath);
-                    long diff = file.Length - GetSize(list[i]);
-                    string content = AddSizeToAddSize(MakeFileInfos(file, diff), GetAddSize(list[i]));
                     writer.WriteLine(content);
-
-                    int last = list.Count - 1;
-                    list[last] = AddSizeToAddSize(AddSizeToSize(list[last], diff), diff);
-                    continue;
                 }
                 writer.WriteLine(list[i]);
             }
 
             writer.Close();
             stream.Close();
+
+            if (diff != 0)
+            {
+                UpdateParentLog(Path.GetDirectoryName(fileFullPath), GetSize(list[last]));
+            }
+        }
+
+        public static void ChangeLogContent(string fileFullPath)      //여기엔 파일밖에 안 들어오겠지..?
+        {
+            ChangeLogContent(fileFullPath, new FileInfo(fileFullPath).Length);
+        }
+        public static void ChangeLogContent(string fullPath, long size)
+        {
+            string path = GetLogFilePath(Path.GetDirectoryName(fullPath));
+
+            List<string> list = ReadLogFile(path);
+            int last = list.Count - 1;
+
+            FileStream stream = new FileStream(path, FileMode.Create);
+            StreamWriter writer = new StreamWriter(stream);
+
+            long diff = 0;
+
+            for (int i = 0; i < list.Count - 1; i++)
+            {
+                if (GetFileName(list[i]).Equals(Path.GetFileName(fullPath)))
+                {
+                    diff = size - GetSize(list[i]);
+                    string content = File.Exists(fullPath) ? MakeFileInfos(fullPath, size, diff) : MakeDirectoryInfos(fullPath, size, diff);
+                    content = AddSizeToAddSize(content, GetAddSize(list[i]));
+                    writer.WriteLine(content);
+
+                    list[last] = AddSizeToBoth(list[last], diff);
+                    continue;
+                }
+                writer.WriteLine(list[i]);
+            }
+            writer.WriteLine(list[last]);
+
+            writer.Close();
+            stream.Close();
+
+            if (diff != 0)
+            {
+                UpdateParentLog(Path.GetDirectoryName(fullPath), GetSize(list[last]));
+            }
         }
 
         public static void DeleteLogContent(string fileFullPath)
         {
             string path = GetLogFilePath(Path.GetDirectoryName(fileFullPath));
             string fileName = Path.GetFileName(fileFullPath);
+
             List<string> list = ReadLogFile(path);
+            int last = list.Count - 1;
 
             FileStream stream = new FileStream(path, FileMode.Create);
             StreamWriter writer = new StreamWriter(stream);
 
-            long removeSize;
+            long removeSize = 0;
 
-            for (int i = 0; i < list.Count; i++)
+            for (int i = 0; i < list.Count - 1; i++)
             {
                 if (GetFileName(list[i]).Equals(fileName))
                 {
-                    removeSize = GetSize(list[i]);
-                    int last = list.Count - 1;
-                    list[last] = AddSizeToAddSize(AddSizeToSize(list[last], removeSize), removeSize);
+                    removeSize = -1 * GetSize(list[i]);
+                    list[last] = AddSizeToBoth(list[last], removeSize);
                     continue;
                 }
                 writer.WriteLine(list[i]);
             }
+            writer.WriteLine(list[last]);
 
             writer.Close();
             stream.Close();
@@ -154,8 +181,12 @@ namespace Digda
             {
                 File.Delete(GetLogFilePath(fileFullPath));
             }
-        }
 
+            if (removeSize != 0)
+            {
+                UpdateParentLog(Path.GetDirectoryName(fileFullPath), GetSize(list[last]));
+            }
+        }
         public static void RenameLogContent(string oldFile, string newFile)
         {
             string path = GetLogFilePath(Path.GetDirectoryName(oldFile));
@@ -164,7 +195,7 @@ namespace Digda
             FileStream stream = new FileStream(path, FileMode.Create);
             StreamWriter writer = new StreamWriter(stream);
 
-            bool isWrote = false;
+            bool isRemoved = false;
             string newContent = null;
 
             if (File.Exists(newFile))
@@ -181,20 +212,28 @@ namespace Digda
 
             foreach (string s in list)
             {
-                if (GetFileName(s).Equals(Path.GetFileName(oldFile)))
+                if (isRemoved == false && GetFileName(s).Equals(Path.GetFileName(oldFile)))
                 {
+                    isRemoved = true;
                     continue;
                 }
-                if (isWrote == false && FileInfoCompare(newContent, s) < 0)
+                if (FileInfoCompare(newContent, s) < 0)
                 {
                     writer.WriteLine(newContent);
-                    isWrote = true;
                 }
                 writer.WriteLine(s);
             }
 
             writer.Close();
             stream.Close();
+        }
+
+        private static void UpdateParentLog(string dirPath, long dirSize)
+        {
+            if (File.Exists(GetLogFilePath(Path.GetDirectoryName(dirPath))))
+            {
+                ChangeLogContent(dirPath, dirSize);
+            }
         }
 
 
@@ -267,6 +306,10 @@ namespace Digda
             return s[0] + "|" + s[1] + "|" + s[2];
         }
 
+        private static string AddSizeToBoth(string info, long addSize)
+        {
+            return AddSizeToAddSize(AddSizeToSize(info, addSize), addSize);
+        }
 
         private static int FileInfoCompare(string s1, string s2)
         {
