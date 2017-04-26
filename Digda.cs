@@ -13,9 +13,13 @@ namespace Digda
             DirectoryInfo current = new DirectoryInfo(Directory.GetCurrentDirectory());
             char[] options = null;
 
-            if (Directory.Exists(DigdaLog.logSaveDirPath) == false)
+            if (Directory.Exists(DigdaLog.LogSaveDirPath) == false)
             {
-                Directory.CreateDirectory(DigdaLog.logSaveDirPath);
+                Directory.CreateDirectory(DigdaLog.LogSaveDirPath);
+            }
+            if (Directory.Exists(DigdaSysLog.SysLogSaveDirPath) == false)
+            {
+                Directory.CreateDirectory(DigdaSysLog.SysLogSaveDirPath);
             }
 
             if (args.Length > 0)
@@ -50,6 +54,18 @@ namespace Digda
             watcher.Renamed += new RenamedEventHandler(OnRenamed);
 
             watcher.EnableRaisingEvents = true;
+
+            FileSystemWatcher sysLogWatcher = new FileSystemWatcher(DigdaLog.LogSaveDirPath, "*.dig")
+            {
+                NotifyFilter = NotifyFilters.LastWrite,
+                IncludeSubdirectories = false
+            };
+
+            sysLogWatcher.Changed += new FileSystemEventHandler(DigdaSysLog.OnChanged);
+            sysLogWatcher.Created += new FileSystemEventHandler(DigdaSysLog.OnCreated);
+            sysLogWatcher.Deleted += new FileSystemEventHandler(DigdaSysLog.OnDeleted);
+
+            //sysLogWatcher.EnableRaisingEvents = true;
 
             do
             {

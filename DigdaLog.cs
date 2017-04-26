@@ -4,28 +4,30 @@ using System.Text;
 
 namespace Digda
 {
-    public static class DigdaLog    //변경사항 저장해야함
+    public static class DigdaLog
     {
         private static char separator = Path.DirectorySeparatorChar;
         private static string programDirPath = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().CodeBase).Replace(@"file:\", "");
-        public static string logSaveDirPath = Path.GetPathRoot(programDirPath) + separator + "DigdaLogs";
+        private static string root = Path.GetPathRoot(programDirPath);
 
+        public static string LogSaveDirPath { get; } = root + separator + "DigdaLogs";
+        
 
         public static string GetLogFilePath(string path)
         {
-            return logSaveDirPath + separator + path.Replace(separator, '@').Replace(":", "") + ".dig";
+            return LogSaveDirPath + separator + path.Replace(separator, '@').Replace(":", "") + ".dig";
         }
 
-        public static string GetParentLogFilePath(string logFileName)
-        {
-            StringBuilder sb = new StringBuilder();
-            string[] array = logFileName.Split('@');
-            for(int i=0; i<array.Length - 1; i++)
-            {
-                sb.Append(array[i]);
-            }
-            return logSaveDirPath + separator + sb.ToString() + ".dig";
-        }
+        //public static string GetParentLogFilePath(string logFileName)
+        //{
+        //    StringBuilder sb = new StringBuilder();
+        //    string[] array = logFileName.Split('@');
+        //    for(int i=0; i<array.Length - 1; i++)
+        //    {
+        //        sb.Append(array[i]);
+        //    }
+        //    return logSaveDirPath + separator + sb.ToString() + ".dig";
+        //}
 
         public static string MakeFileInfos(FileInfo file, long addSize)
         {
@@ -187,6 +189,7 @@ namespace Digda
                 UpdateParentLog(Path.GetDirectoryName(fileFullPath), GetSize(list[last]));
             }
         }
+
         public static void RenameLogContent(string oldFile, string newFile)
         {
             string path = GetLogFilePath(Path.GetDirectoryName(oldFile));
@@ -208,9 +211,11 @@ namespace Digda
                 DirectoryInfo dir = new DirectoryInfo(newFile);
                 long size = Digda.GetDirectorySize(dir, 0);
                 newContent = MakeDirectoryInfos(dir, size, size);
+
+                DeleteLogAndChilds(oldFile);
             }
 
-            foreach (string s in list)
+            foreach (string s in list)  //디렉토리 이름이 바뀌면 하위 디렉토리의 옛 로그가 안 사라짐
             {
                 if (isRemoved == false && GetFileName(s).Equals(Path.GetFileName(oldFile)))
                 {
