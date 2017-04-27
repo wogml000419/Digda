@@ -65,7 +65,7 @@ namespace Digda
             sysLogWatcher.Created += new FileSystemEventHandler(DigdaSysLog.OnCreated);
             sysLogWatcher.Deleted += new FileSystemEventHandler(DigdaSysLog.OnDeleted);
 
-            //sysLogWatcher.EnableRaisingEvents = true;
+            sysLogWatcher.EnableRaisingEvents = true;
 
             do
             {
