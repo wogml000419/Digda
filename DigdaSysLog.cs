@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 namespace Digda
 {
-    public static class DigdaSysLog    //.dig 삭제됐을 때 처리 / 삭제된 파일 따로 기록
+    public static class DigdaSysLog    //기록 자체는 구현했으나 초기 상태와의 변화를 알기 위해서는 원래 있던 파일인지 확일할 필요
     {
         private static char separator = Path.DirectorySeparatorChar;
         //private static FileStream sysLogStream;
@@ -11,6 +11,7 @@ namespace Digda
 
         public static string SysLogSaveDirPath { get; } = DigdaLog.LogSaveDirPath + separator + "DigdaSystemLog";
         public static string DigChangeLogPath { get; } = SysLogSaveDirPath + separator + "DigChange.log";
+        public static string DeletedFilesLogPath { get; } = SysLogSaveDirPath + separator + "DeletedFiles.log";
         //public static bool IsStreamOpen { get; private set; } = false;
 
 
@@ -44,53 +45,17 @@ namespace Digda
 
         public static void OnCreated(object source, FileSystemEventArgs e)
         {
-            System.Console.WriteLine($"{e.ChangeType} : {e.Name}");
+            //System.Console.WriteLine($"{e.ChangeType} : {e.Name}");
             InsertLogContent(DigChangeLogPath, e.Name);
         }
 
         public static void OnDeleted(object source, FileSystemEventArgs e)
         {
-            System.Console.WriteLine($"Deleted {e.Name}");
-            List<string> list = ReadLog(DigChangeLogPath);
-
-            FileStream stream = new FileStream(DigChangeLogPath, FileMode.Create);
-            StreamWriter writer = new StreamWriter(stream);
-
-            foreach(string s in list)
-            {
-                if(s.Equals(e.Name))
-                {
-                    System.Console.WriteLine("Found!");
-                    continue;
-
-                }
-                writer.WriteLine(s);
-            }
-
-            writer.Close();
-            stream.Close();
+            //System.Console.WriteLine($"Deleted {e.Name}");
+            RemoveLogContent(DigChangeLogPath, e.Name);
         }
 
-
-        private static List<string> ReadLog(string path)
-        {
-            FileStream stream = new FileStream(path, FileMode.OpenOrCreate);
-            StreamReader reader = new StreamReader(stream);
-            List<string> list = new List<string>();
-            while(true)
-            {
-                string s = reader.ReadLine();
-                if (s == null || s.Equals(""))
-                    break;
-                list.Add(s);
-            }
-
-            reader.Close();
-            stream.Close();
-            return list;
-        }
-
-        private static void InsertLogContent(string logFile, string content)
+        public static void InsertLogContent(string logFile, string content)
         {
             List<string> list = ReadLog(logFile);
 
@@ -127,6 +92,45 @@ namespace Digda
 
             writer.Close();
             stream.Close();
+        }
+
+        public static void RemoveLogContent(string logFile, string removeContent)
+        {
+            List<string> list = ReadLog(logFile);
+
+            FileStream stream = new FileStream(logFile, FileMode.Create);
+            StreamWriter writer = new StreamWriter(stream);
+
+            foreach (string s in list)
+            {
+                if (s.Equals(removeContent))
+                {
+                    //System.Console.WriteLine("Found!");
+                    continue;
+                }
+                writer.WriteLine(s);
+            }
+
+            writer.Close();
+            stream.Close();
+        }
+
+        private static List<string> ReadLog(string path)
+        {
+            FileStream stream = new FileStream(path, FileMode.OpenOrCreate);
+            StreamReader reader = new StreamReader(stream);
+            List<string> list = new List<string>();
+            while(true)
+            {
+                string s = reader.ReadLine();
+                if (s == null || s.Equals(""))
+                    break;
+                list.Add(s);
+            }
+
+            reader.Close();
+            stream.Close();
+            return list;
         }
     }
 }

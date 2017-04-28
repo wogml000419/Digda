@@ -172,6 +172,7 @@ namespace Digda
                 {
                     removeSize = -1 * GetSize(list[i]);
                     list[last] = AddSizeToBoth(list[last], removeSize);
+                    DigdaSysLog.InsertLogContent(DigdaSysLog.DeletedFilesLogPath, fileFullPath + '|' + GetSize(list[i]));
                     continue;
                 }
                 writer.WriteLine(list[i]);
