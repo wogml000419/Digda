@@ -57,7 +57,7 @@ namespace Digda
 
             FileSystemWatcher sysLogWatcher = new FileSystemWatcher(DigdaLog.LogSaveDirPath, "*.dig")
             {
-                NotifyFilter = NotifyFilters.LastWrite,
+                NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName,
                 IncludeSubdirectories = false
             };
 

@@ -92,11 +92,13 @@ namespace Digda
             FileStream stream = new FileStream(path, FileMode.Create);
             StreamWriter writer = new StreamWriter(stream);
 
+            bool isWrote = false;
             for (int i = 0; i < list.Count; i++)
             {
-                if (FileInfoCompare(content, list[i]) < 0)
+                if (isWrote == false && FileInfoCompare(content, list[i]) < 0)
                 {
                     writer.WriteLine(content);
+                    isWrote = true;
                 }
                 writer.WriteLine(list[i]);
             }
@@ -215,7 +217,7 @@ namespace Digda
                 DeleteLogAndChilds(oldFile);
             }
 
-            foreach (string s in list)  //디렉토리 이름이 바뀌면 하위 디렉토리의 옛 로그가 안 사라짐
+            foreach (string s in list)
             {
                 if (isRemoved == false && GetFileName(s).Equals(Path.GetFileName(oldFile)))
                 {

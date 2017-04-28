@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 namespace Digda
 {
-    public static class DigdaSysLog    //변경사항 저장하는 기능 필요
+    public static class DigdaSysLog    //.dig 삭제됐을 때 처리 / 삭제된 파일 따로 기록
     {
         private static char separator = Path.DirectorySeparatorChar;
         //private static FileStream sysLogStream;
@@ -30,7 +30,8 @@ namespace Digda
 
         public static void OnChanged(object source, FileSystemEventArgs e)
         {
-            if(changedTrigger == false)
+            System.Console.WriteLine($"Changed {e.Name}");
+            if (changedTrigger == false)
             {
                 InsertLogContent(DigChangeLogPath, e.Name);
                 changedTrigger = true;
@@ -49,7 +50,25 @@ namespace Digda
 
         public static void OnDeleted(object source, FileSystemEventArgs e)
         {
+            System.Console.WriteLine($"Deleted {e.Name}");
+            List<string> list = ReadLog(DigChangeLogPath);
 
+            FileStream stream = new FileStream(DigChangeLogPath, FileMode.Create);
+            StreamWriter writer = new StreamWriter(stream);
+
+            foreach(string s in list)
+            {
+                if(s.Equals(e.Name))
+                {
+                    System.Console.WriteLine("Found!");
+                    continue;
+
+                }
+                writer.WriteLine(s);
+            }
+
+            writer.Close();
+            stream.Close();
         }
 
 
@@ -86,18 +105,18 @@ namespace Digda
             }
             else
             {
-                for (int i = 0; i < list.Count; i++)
+                foreach(string s in list)
                 {
-                    if (isWrote == false && string.Compare(content, list[i], true) < 0)
+                    if (isWrote == false && string.Compare(content, s, true) < 0)
                     {
                         writer.WriteLine(content);
                         isWrote = true;
                     }
-                    else if (isWrote == false && content.Equals(list[i]))
+                    else if (isWrote == false && content.Equals(s))
                     {
                         isWrote = true;
                     }
-                    writer.WriteLine(list[i]);
+                    writer.WriteLine(s);
                 }
 
                 if (isWrote == false)
