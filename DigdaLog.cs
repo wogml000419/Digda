@@ -1,9 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.IO;
-using System.Text;
 
 namespace Digda
 {
+    public enum FileType { None, File, Directory, This };
+
     public static class DigdaLog
     {
         private static char separator = Path.DirectorySeparatorChar;
@@ -18,16 +19,6 @@ namespace Digda
             return LogSaveDirPath + separator + path.Replace(separator, '@').Replace(":", "") + ".dig";
         }
 
-        //public static string GetParentLogFilePath(string logFileName)
-        //{
-        //    StringBuilder sb = new StringBuilder();
-        //    string[] array = logFileName.Split('@');
-        //    for(int i=0; i<array.Length - 1; i++)
-        //    {
-        //        sb.Append(array[i]);
-        //    }
-        //    return logSaveDirPath + separator + sb.ToString() + ".dig";
-        //}
 
         public static string MakeFileInfos(FileInfo file, long addSize)
         {
@@ -110,6 +101,8 @@ namespace Digda
             {
                 UpdateParentLog(Path.GetDirectoryName(fileFullPath), GetSize(list[last]));
             }
+
+            DigdaSysLog.InsertLogContent(DigdaSysLog.DigChangeLogPath, Path.GetFileName(path));
         }
 
         public static void ChangeLogContent(string fileFullPath)      //여기엔 파일밖에 안 들어오겠지..?
@@ -151,6 +144,8 @@ namespace Digda
             {
                 UpdateParentLog(Path.GetDirectoryName(fullPath), GetSize(list[last]));
             }
+
+            DigdaSysLog.InsertLogContent(DigdaSysLog.DigChangeLogPath, Path.GetFileName(path));
         }
 
         public static void DeleteLogContent(string fileFullPath)
@@ -196,6 +191,8 @@ namespace Digda
             {
                 UpdateParentLog(Path.GetDirectoryName(fileFullPath), GetSize(list[last]));
             }
+
+            DigdaSysLog.InsertLogContent(DigdaSysLog.DigChangeLogPath, Path.GetFileName(path));
         }
 
         public static void RenameLogContent(string oldFile, string newFile)
@@ -240,6 +237,59 @@ namespace Digda
             writer.Close();
             stream.Close();
         }
+
+        public static FileType GetFileType(string info)
+        {
+            if (info.StartsWith("[File]")) return FileType.File;
+            if (info.StartsWith("[Directory]")) return FileType.Directory;
+            if (info.StartsWith("[This]")) return FileType.This;
+            return FileType.None;
+        }
+
+        public static string GetFileName(string info)
+        {
+            return info.Split('|')[0].Split(']')[1].Trim();
+        }
+
+        public static long GetSize(string info)
+        {
+            return long.Parse(info.Split('|')[1]);
+        }
+
+        public static long GetAddSize(string info)
+        {
+            return long.Parse(info.Split('|')[2]);
+        }
+
+        
+        public static string SetAddSize(string info, long addSize)
+        {
+            string[] s = info.Split('|');
+
+            return s[0] + '|' + s[1] + '|' + addSize;
+        }
+
+        public static string AddSizeToAddSize(string info, long addSize)
+        {
+            string[] s = info.Split('|');
+            s[2] = (GetAddSize(info) + addSize).ToString();
+
+            return s[0] + "|" + s[1] + "|" + s[2];
+        }
+
+        public static string AddSizeToSize(string info, long addSize)
+        {
+            string[] s = info.Split('|');
+            s[1] = (GetSize(info) + addSize).ToString();
+
+            return s[0] + "|" + s[1] + "|" + s[2];
+        }
+
+        public static string AddSizeToBoth(string info, long addSize)
+        {
+            return AddSizeToAddSize(AddSizeToSize(info, addSize), addSize);
+        }
+
 
         private static void UpdateParentLog(string dirPath, long dirSize)
         {
@@ -296,66 +346,31 @@ namespace Digda
 
             foreach(string s in list)
             {
-                if(s.StartsWith("[Directory]"))
+                if(GetFileType(s) == FileType.Directory)
                 {
                     DeleteLogAndChilds(dirPath + separator + GetFileName(s));
                 }
             }
 
             File.Delete(logFilePath);
+            DigdaSysLog.RemoveLogContent(DigdaSysLog.DigChangeLogPath, Path.GetFileName(logFilePath));
         }
 
-        private static string GetFileName(string info)
-        {
-            return info.Split('|')[0].Split(']')[1].Trim();
-        }
-
-        private static long GetSize(string info)
-        {
-            return long.Parse(info.Split('|')[1]);
-        }
-
-        private static long GetAddSize(string info)
-        {
-            return long.Parse(info.Split('|')[2]);
-        }
-
-
-        private static string AddSizeToAddSize(string info, long addSize)
-        {
-            string[] s = info.Split('|');
-            s[2] = (GetAddSize(info) + addSize).ToString();
-
-            return s[0] + "|" + s[1] + "|" + s[2];
-        }
-
-        private static string AddSizeToSize(string info, long addSize)
-        {
-            string[] s = info.Split('|');
-            s[1] = (GetSize(info) + addSize).ToString();
-
-            return s[0] + "|" + s[1] + "|" + s[2];
-        }
-
-        private static string AddSizeToBoth(string info, long addSize)
-        {
-            return AddSizeToAddSize(AddSizeToSize(info, addSize), addSize);
-        }
 
         private static int FileInfoCompare(string s1, string s2)
         {
-            if (s1.StartsWith("[File]"))
+            if (GetFileType(s1) == FileType.File)
             {
-                if (s2.StartsWith("[File]"))
+                if (GetFileType(s2) == FileType.File)
                     return string.Compare(s1, s2, true);
                 else
                     return -1;
             }
-            else if (s1.StartsWith("[Directory]"))
+            else if (GetFileType(s1) == FileType.Directory)
             {
-                if (s2.StartsWith("[Directory]"))
+                if (GetFileType(s2) == FileType.Directory)
                     return string.Compare(s1, s2, true);
-                else if (s2.StartsWith("[This]"))
+                else if (GetFileType(s2) == FileType.This)
                     return -1;
                 else
                     return 1;

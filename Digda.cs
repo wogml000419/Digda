@@ -6,10 +6,11 @@ namespace Digda
 {
     public static class Digda
     {
-        private static string[] excludeFiles = { @"^.*\.dig$" }; 
+        private static string[] excludeFiles = { @"^.*\.dig$", @"DigChange\.log", @"DeletedFiles\.log" }; 
 
-        public static int Main(string[] args)       //변경 내역을 최종적으로는 로그 파일에 작성하도록
+        public static int Main(string[] args)
         {
+            DigdaSysLog.LastShow = DateTime.Now;
             DirectoryInfo current = new DirectoryInfo(Directory.GetCurrentDirectory());
             char[] options = null;
 
@@ -20,6 +21,10 @@ namespace Digda
             if (Directory.Exists(DigdaSysLog.SysLogSaveDirPath) == false)
             {
                 Directory.CreateDirectory(DigdaSysLog.SysLogSaveDirPath);
+            }
+            if(Directory.Exists(DigdaSysLog.FileChangesDirPath) == false)
+            {
+                Directory.CreateDirectory(DigdaSysLog.FileChangesDirPath);
             }
 
             if (args.Length > 0)
@@ -55,17 +60,17 @@ namespace Digda
 
             watcher.EnableRaisingEvents = true;
 
-            FileSystemWatcher sysLogWatcher = new FileSystemWatcher(DigdaLog.LogSaveDirPath, "*.dig")
-            {
-                NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName,
-                IncludeSubdirectories = false
-            };
+            //FileSystemWatcher sysLogWatcher = new FileSystemWatcher(DigdaLog.LogSaveDirPath, "*.dig")
+            //{
+            //    NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName,
+            //    IncludeSubdirectories = false
+            //};
 
-            sysLogWatcher.Changed += new FileSystemEventHandler(DigdaSysLog.OnChanged);
-            sysLogWatcher.Created += new FileSystemEventHandler(DigdaSysLog.OnCreated);
-            sysLogWatcher.Deleted += new FileSystemEventHandler(DigdaSysLog.OnDeleted);
+            //sysLogWatcher.Changed += new FileSystemEventHandler(DigdaSysLog.OnChanged);
+            //sysLogWatcher.Created += new FileSystemEventHandler(DigdaSysLog.OnCreated);
+            //sysLogWatcher.Deleted += new FileSystemEventHandler(DigdaSysLog.OnDeleted);
 
-            sysLogWatcher.EnableRaisingEvents = true;
+            //sysLogWatcher.EnableRaisingEvents = true;
 
             do
             {
@@ -85,7 +90,8 @@ namespace Digda
                 }
                 else if (command.Equals("s") || command.Equals("show"))
                 {
-
+                    DigdaSysLog.WriteChanges();
+                    Console.WriteLine($"[System] ChangeLog writed at {DigdaSysLog.FileChangesDirPath}");
                 }
                 else        //help
                 {
