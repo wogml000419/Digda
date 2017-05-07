@@ -6,7 +6,7 @@ namespace Digda
 {
     public static class Digda
     {
-        private static string[] excludeFiles = { @"^.*\.dig$", @"DigChange\.log", @"DeletedFiles\.log" }; 
+        private static string[] excludeFiles = {/* @"^.*\.dig$", @"DigChange\.log", @"DeletedFiles\.log", */$@"^{DigdaLog.LogSaveDirPath}" }; 
 
         public static int Main(string[] args)
         {
@@ -33,6 +33,7 @@ namespace Digda
                 if(Array.Exists(options, c => c == 'h' || c == 'H'))    //-h 는 help를 보여줍니다. 이 옵션은 프로그램을 종료시킵니다.
                 {
                     PrintHelp();
+                    return 0;
                 }
                 if (Array.Exists(options, c => c == 'r' || c == 'R'))   //-r은 현재 디렉토리에 상관 없이 루트 디렉토리를 시작 디렉토리로 정합니다.
                 {
@@ -175,7 +176,7 @@ namespace Digda
         private static void OnChanged(object source, FileSystemEventArgs e)
         {
             foreach (string pattern in excludeFiles)
-                if (Regex.IsMatch(e.Name, pattern))
+                if (Regex.IsMatch(e.FullPath, pattern))
                     return;
 
             Console.WriteLine($"[{e.ChangeType}] : {e.FullPath}");
@@ -197,7 +198,7 @@ namespace Digda
         private static void OnRenamed(object source, RenamedEventArgs e)
         {
             foreach (string pattern in excludeFiles)
-                if (Regex.IsMatch(e.Name, pattern))
+                if (Regex.IsMatch(e.FullPath, pattern))
                     return;
 
             Console.WriteLine($"[Renamed] {e.OldFullPath} -> {e.FullPath}");
