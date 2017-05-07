@@ -30,6 +30,10 @@ namespace Digda
             if (args.Length > 0)
             {
                 options = args[0].Trim(' ', '-').ToCharArray();
+                if(Array.Exists(options, c => c == 'h' || c == 'H'))    //-h 는 help를 보여줍니다. 이 옵션은 프로그램을 종료시킵니다.
+                {
+                    PrintHelp();
+                }
                 if (Array.Exists(options, c => c == 'r' || c == 'R'))   //-r은 현재 디렉토리에 상관 없이 루트 디렉토리를 시작 디렉토리로 정합니다.
                 {
                     current = current.Root;
@@ -60,24 +64,15 @@ namespace Digda
 
             watcher.EnableRaisingEvents = true;
 
-            //FileSystemWatcher sysLogWatcher = new FileSystemWatcher(DigdaLog.LogSaveDirPath, "*.dig")
-            //{
-            //    NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName,
-            //    IncludeSubdirectories = false
-            //};
-
-            //sysLogWatcher.Changed += new FileSystemEventHandler(DigdaSysLog.OnChanged);
-            //sysLogWatcher.Created += new FileSystemEventHandler(DigdaSysLog.OnCreated);
-            //sysLogWatcher.Deleted += new FileSystemEventHandler(DigdaSysLog.OnDeleted);
-
-            //sysLogWatcher.EnableRaisingEvents = true;
-
             do
             {
-                string command = Console.ReadLine().ToLower();
+                string command = Console.ReadLine().ToLower().Trim();
 
                 if (command.Equals("q") || command.Equals("quit"))
                 {
+                    Console.WriteLine("Write changes before closing...");
+                    DigdaSysLog.WriteChanges();
+                    Console.WriteLine($"[System] ChangeLog writed at {DigdaSysLog.FileChangesDirPath}");
                     break;
                 }
                 else if (command.Equals("r") || command.Equals("refresh"))
@@ -93,9 +88,18 @@ namespace Digda
                     DigdaSysLog.WriteChanges();
                     Console.WriteLine($"[System] ChangeLog writed at {DigdaSysLog.FileChangesDirPath}");
                 }
-                else        //help
+                else if(command.Equals("h") || command.Equals("help"))
                 {
-
+                    PrintHelp();
+                }
+                else if(command.Equals(""))
+                {
+                    //pass
+                }
+                else        
+                {
+                    Console.WriteLine("[Error] Invalid Command");
+                    PrintHelp();
                 }
             }
             while (true);
@@ -207,6 +211,34 @@ namespace Digda
             {
                 Console.Write("| ");
             }
+        }
+
+        private static void PrintHelp()
+        {
+            Console.WriteLine(@"
+ _______________________________________________________________________ 
+| Usage: digda [<args>]                                                 |
+|                                                                       |
+| args:                                                                 |
+|                                                                       |
+|     [-h]: Shows help                                                  |
+|                                                                       |
+|     [-r]: Watches root directory regardless of current directory      |
+|                                                                       |
+|     [-a]: Updates logs even if there are logs that written previously |
+|                                                                       |
+| in-program commands:                                                  |
+|                                                                       | 
+|     [q | quit]: Quits program                                         |
+|                                                                       |
+|     [r | refresh]: Updates logs. (WIP)                                |
+|                                                                       |
+|     [c | cd]: Changes whatching directory (WIP)                       |
+|                                                                       | 
+|     [s | show]: Writes changes in file                                |
+|                                                                       |
+|     [h | help]: Shows help                                            |
+|_______________________________________________________________________|");    
         }
     }
 }
