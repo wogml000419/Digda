@@ -127,7 +127,11 @@ namespace Digda
                 return;
             }
 
-            if (DigdaLog.GetAddSize(log[last]) == DigdaLog.GetSize(log[last]))
+            if(DigdaLog.GetAddSize(log[last]) == 0)
+            {
+                //pass
+            }
+            else if (DigdaLog.GetAddSize(log[last]) == DigdaLog.GetSize(log[last]))
             {
                 changesHolder.Add(GetSpaces(depth) + "[Created] " + MakeChangesContent(log[last]));
             }
@@ -152,7 +156,7 @@ namespace Digda
             FileStream stream = new FileStream(logPath, FileMode.Create);
             StreamWriter writer = new StreamWriter(stream);
 
-            foreach (string s in log)
+            foreach (string s in log)   //변화량 0인건 적히지 않게
             {
                 string tmp = s;
                 if (DigdaLog.GetAddSize(s) != 0)
