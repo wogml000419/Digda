@@ -16,7 +16,7 @@ namespace Digda
 
         public static string GetLogFilePath(string path)
         {
-            return LogSaveDirPath + separator + path.Replace(separator, '@').Replace(":", "") + ".dig";
+            return LogSaveDirPath + separator + path.TrimEnd(separator).Replace(separator, '@').Replace(":", "") + ".dig";
         }
 
 
@@ -56,22 +56,37 @@ namespace Digda
                 WriteEmptyFolderLog(Path.GetDirectoryName(fileFullPath), path);
             }
 
-            List<string> list = ReadLogFile(path);
-            int last = list.Count - 1;
-
             string content = null;
 
-            if (File.Exists(fileFullPath))
+            try
             {
-                FileInfo file = new FileInfo(fileFullPath);
-                content = MakeFileInfos(file, file.Length);
+                if (File.Exists(fileFullPath))
+                {
+                    FileInfo file = new FileInfo(fileFullPath);
+                    content = MakeFileInfos(file, file.Length);
+                }
+                else if (Directory.Exists(fileFullPath))
+                {
+                    DirectoryInfo dir = new DirectoryInfo(fileFullPath);
+                    long size = Digda.GetDirectorySize(dir, 0);
+                    content = MakeDirectoryInfos(dir, size, size);
+                }
+                else
+                {
+                    return;
+                }
             }
-            else
+            catch(System.UnauthorizedAccessException)
             {
-                DirectoryInfo dir = new DirectoryInfo(fileFullPath);
-                long size = Digda.GetDirectorySize(dir, 0);
-                content = MakeDirectoryInfos(dir, size, size);
+                return;
             }
+            catch(FileNotFoundException)
+            {
+                return;
+            }
+
+            List<string> list = ReadLogFile(path);
+            int last = list.Count - 1;
 
             long diff = GetSize(content);
 
@@ -107,7 +122,18 @@ namespace Digda
 
         public static void ChangeLogContent(string fileFullPath)      //여기엔 파일밖에 안 들어오겠지..?
         {
-            ChangeLogContent(fileFullPath, new FileInfo(fileFullPath).Length);
+            try
+            {
+                ChangeLogContent(fileFullPath, new FileInfo(fileFullPath).Length);
+            }
+            catch(System.UnauthorizedAccessException)
+            {
+                return;
+            }
+            catch(FileNotFoundException)
+            {
+                return;
+            }
         }
         public static void ChangeLogContent(string fullPath, long size)
         {
@@ -115,6 +141,13 @@ namespace Digda
 
             List<string> list = ReadLogFile(path);
             int last = list.Count - 1;
+
+            if(last < 0)
+            {
+                WriteEmptyFolderLog(Path.GetDirectoryName(fullPath), path);
+                list = ReadLogFile(path);
+                last = list.Count - 1;
+            }
 
             FileStream stream = new FileStream(path, FileMode.Create);
             StreamWriter writer = new StreamWriter(stream);
@@ -155,6 +188,13 @@ namespace Digda
 
             List<string> list = ReadLogFile(path);
             int last = list.Count - 1;
+
+            if (last < 0)
+            {
+                WriteEmptyFolderLog(Path.GetDirectoryName(fileFullPath), path);
+                list = ReadLogFile(path);
+                last = list.Count - 1;
+            }
 
             FileStream stream = new FileStream(path, FileMode.Create);
             StreamWriter writer = new StreamWriter(stream);
@@ -197,21 +237,13 @@ namespace Digda
 
         public static void RenameLogContent(string oldFile, string newFile)
         {
-            string path = GetLogFilePath(Path.GetDirectoryName(oldFile));
-            List<string> list = ReadLogFile(path);
-
-            FileStream stream = new FileStream(path, FileMode.Create);
-            StreamWriter writer = new StreamWriter(stream);
-
-            bool isRemoved = false;
             string newContent = null;
-
             if (File.Exists(newFile))
             {
                 FileInfo file = new FileInfo(newFile);
                 newContent = MakeFileInfos(file, file.Length);
             }
-            else
+            else if(Directory.Exists(newFile))
             {
                 DirectoryInfo dir = new DirectoryInfo(newFile);
                 long size = Digda.GetDirectorySize(dir, 0);
@@ -219,6 +251,18 @@ namespace Digda
 
                 DeleteLogAndChilds(oldFile);
             }
+            else
+            {
+                return;
+            }
+
+            string path = GetLogFilePath(Path.GetDirectoryName(oldFile));
+            List<string> list = ReadLogFile(path);
+
+            FileStream stream = new FileStream(path, FileMode.Create);
+            StreamWriter writer = new StreamWriter(stream);
+
+            bool isRemoved = false;
 
             foreach (string s in list)
             {
@@ -293,7 +337,8 @@ namespace Digda
 
         private static void UpdateParentLog(string dirPath, long dirSize)
         {
-            if (File.Exists(GetLogFilePath(Path.GetDirectoryName(dirPath))))
+            string parentDir = Path.GetDirectoryName(dirPath);
+            if (parentDir != null && File.Exists(GetLogFilePath(parentDir)))
             {
                 ChangeLogContent(dirPath, dirSize);
             }

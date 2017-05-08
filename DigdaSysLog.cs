@@ -90,6 +90,7 @@ namespace Digda
                 }
                 if (firstDepth < 0)
                     firstDepth = list[0].Split('@').Length - 1;
+                Console.WriteLine($"[Debug] {list[0]}");
                 WriteChanges(DigdaLog.LogSaveDirPath + separator + list[0], firstDepth - (list[0].Split('@').Length - 1));
             }
 
@@ -115,10 +116,17 @@ namespace Digda
         }
         private static void WriteChanges(string logPath, int depth)
         {
+            Console.WriteLine($"[Debug] {logPath}");
             List<string> log = ReadLog(logPath);
             List<string> deleted = ReadLog(DeletedFilesLogPath);
 
             int last = log.Count - 1;
+            if(last < 0)
+            {
+                Console.WriteLine("log is empty, writing failed...");
+                return;
+            }
+
             if (DigdaLog.GetAddSize(log[last]) == DigdaLog.GetSize(log[last]))
             {
                 changesHolder.Add(GetSpaces(depth) + "[Created] " + MakeChangesContent(log[last]));
