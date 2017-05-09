@@ -263,6 +263,7 @@ namespace Digda
             StreamWriter writer = new StreamWriter(stream);
 
             bool isRemoved = false;
+            bool isWrote = false;
 
             foreach (string s in list)
             {
@@ -271,7 +272,7 @@ namespace Digda
                     isRemoved = true;
                     continue;
                 }
-                if (FileInfoCompare(newContent, s) < 0)
+                if (isWrote == false && FileInfoCompare(newContent, s) < 0)
                 {
                     writer.WriteLine(newContent);
                 }
