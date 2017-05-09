@@ -275,6 +275,7 @@ namespace Digda
                 if (isWrote == false && FileInfoCompare(newContent, s) < 0)
                 {
                     writer.WriteLine(newContent);
+                    isWrote = true;
                 }
                 writer.WriteLine(s);
             }
