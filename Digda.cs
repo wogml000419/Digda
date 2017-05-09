@@ -6,7 +6,7 @@ namespace Digda
 {
     public static class Digda
     {
-        private static string[] excludeFiles = {/* @"^.*\.dig$", @"DigChange\.log", @"DeletedFiles\.log", */$@"^{DigdaLog.LogSaveDirPath}" }; 
+        private static string[] excludeFiles = {$@"^{DigdaLog.LogSaveDirPath}" }; 
 
         public static int Main(string[] args)
         {
@@ -87,7 +87,7 @@ namespace Digda
                 else if (command.Equals("s") || command.Equals("show"))
                 {
                     DigdaSysLog.WriteChanges();
-                    Console.WriteLine($"[System] ChangeLog writed at {DigdaSysLog.FileChangesDirPath}");
+                    Console.WriteLine($"[System] ChangeLog wrote at {DigdaSysLog.FileChangesDirPath}");
                 }
                 else if(command.Equals("h") || command.Equals("help"))
                 {
@@ -253,7 +253,7 @@ namespace Digda
                 if (Regex.IsMatch(e.FullPath, pattern))
                     return;
 
-            Console.WriteLine($"[Renamed] {e.OldFullPath} -> {e.FullPath}");
+            Console.WriteLine($"[Renamed] : {e.OldFullPath} -> {e.FullPath}");
             DigdaLog.RenameLogContent(e.OldFullPath, e.FullPath);
         }
 

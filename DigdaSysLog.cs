@@ -87,7 +87,7 @@ namespace Digda
                 if (firstDepth < 0)
                     firstDepth = list[0].Split('@').Length - 1;
                 Console.WriteLine($"[Debug] {list[0]}");
-                WriteChanges(DigdaLog.LogSaveDirPath + separator + list[0], firstDepth - (list[0].Split('@').Length - 1));
+                WriteChanges(DigdaLog.LogSaveDirPath + separator + list[0], (list[0].Split('@').Length - 1) - firstDepth);
             }
 
             DateTime current = DateTime.Now;
@@ -123,7 +123,7 @@ namespace Digda
 
             if(DigdaLog.GetAddSize(log[last]) == 0)
             {
-                //pass
+                return;
             }
             else if (DigdaLog.GetAddSize(log[last]) == DigdaLog.GetSize(log[last]))
             {
@@ -149,7 +149,7 @@ namespace Digda
 
             StreamWriter writer = Digda.WaitAndGetWriter(logPath, FileMode.Create);
 
-            foreach (string s in log)   //변화량 0인건 적히지 않게
+            foreach (string s in log)   
             {
                 string tmp = s;
                 if (DigdaLog.GetAddSize(s) != 0)
