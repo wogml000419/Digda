@@ -95,8 +95,7 @@ namespace Digda
                 list[last] = AddSizeToBoth(list[last], diff);
             }
 
-            FileStream stream = new FileStream(path, FileMode.Create);
-            StreamWriter writer = new StreamWriter(stream);
+            StreamWriter writer = Digda.WaitAndGetWriter(path, FileMode.Create);
 
             bool isWrote = false;
             for (int i = 0; i < list.Count; i++)
@@ -110,7 +109,6 @@ namespace Digda
             }
 
             writer.Close();
-            stream.Close();
 
             if (diff != 0)
             {
@@ -149,8 +147,7 @@ namespace Digda
                 last = list.Count - 1;
             }
 
-            FileStream stream = new FileStream(path, FileMode.Create);
-            StreamWriter writer = new StreamWriter(stream);
+            StreamWriter writer = Digda.WaitAndGetWriter(path, FileMode.Create);
 
             long diff = 0;
 
@@ -171,7 +168,6 @@ namespace Digda
             writer.WriteLine(list[last]);
 
             writer.Close();
-            stream.Close();
 
             if (diff != 0)
             {
@@ -196,8 +192,7 @@ namespace Digda
                 last = list.Count - 1;
             }
 
-            FileStream stream = new FileStream(path, FileMode.Create);
-            StreamWriter writer = new StreamWriter(stream);
+            StreamWriter writer = Digda.WaitAndGetWriter(path, FileMode.Create);
 
             long removeSize = 0;
 
@@ -220,7 +215,6 @@ namespace Digda
             writer.WriteLine(list[last]);
 
             writer.Close();
-            stream.Close();
 
             if (File.Exists(GetLogFilePath(fileFullPath)))
             {
@@ -259,8 +253,7 @@ namespace Digda
             string path = GetLogFilePath(Path.GetDirectoryName(oldFile));
             List<string> list = ReadLogFile(path);
 
-            FileStream stream = new FileStream(path, FileMode.Create);
-            StreamWriter writer = new StreamWriter(stream);
+            StreamWriter writer = Digda.WaitAndGetWriter(path, FileMode.Create);
 
             bool isRemoved = false;
             bool isWrote = false;
@@ -281,7 +274,6 @@ namespace Digda
             }
 
             writer.Close();
-            stream.Close();
         }
 
         public static FileType GetFileType(string info)
@@ -363,24 +355,20 @@ namespace Digda
         }
         private static List<string> ReadLogFile(string path)
         {
-            FileStream stream = new FileStream(path, FileMode.OpenOrCreate);
-            StreamReader reader = new StreamReader(stream);
+            StreamReader reader = Digda.WaitAndGetReader(path, FileMode.OpenOrCreate);
 
             List<string> r = ReadLogFile(reader);
             reader.Close();
-            stream.Close();
             return r;
         }
 
         private static void WriteEmptyFolderLog(string dirPath, string filePath)
         {
-            FileStream stream = new FileStream(filePath, FileMode.Create);
-            StreamWriter writer = new StreamWriter(stream);
+            StreamWriter writer = Digda.WaitAndGetWriter(filePath, FileMode.Create);
 
             writer.WriteLine(MakeThisDirInfos(dirPath, 0, 0));
 
             writer.Close();
-            stream.Close();
         }
 
         private static void DeleteLogAndChilds(string dirPath)

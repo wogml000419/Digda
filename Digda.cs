@@ -135,8 +135,7 @@ namespace Digda
 
             long size = 0;
             string logPath = DigdaLog.GetLogFilePath(dir.FullName);
-            FileStream writingFile = new FileStream(logPath, FileMode.Create);
-            StreamWriter writer = new StreamWriter(writingFile);
+            StreamWriter writer = WaitAndGetWriter(logPath, FileMode.Create);
 
             foreach (FileInfo subFile in subFiles)
             {
@@ -165,13 +164,66 @@ namespace Digda
             writer.WriteLine(DigdaLog.MakeThisDirInfos(dir, size, 0));
 
             writer.Close();
-            writingFile.Close();
-
-
 
             return size;
         }
 
+
+        public static StreamWriter WaitAndGetWriter(string path, FileMode mode)
+        {
+            FileStream stream = null;
+            int tryCount = 1;
+
+            while(tryCount <= 10)
+            {
+                try
+                {
+                    stream = new FileStream(path, mode);
+                }
+                catch(IOException)
+                {
+                    Console.WriteLine($"[Error] IOExcepthion raised while opening FileStream, retry... ({tryCount}) ");
+                    tryCount++;
+                    System.Threading.Thread.Sleep(1000);
+                    continue;
+                }
+
+                if (stream != null)
+                {
+                    return new StreamWriter(stream);
+                }
+            }
+
+            throw new IOException($"Opening FileStream({path}, {mode}) is failed ({tryCount} tries)");
+        }
+
+        public static StreamReader WaitAndGetReader(string path, FileMode mode)
+        {
+            FileStream stream = null;
+            int tryCount = 1;
+
+            while (tryCount <= 10)
+            {
+                try
+                {
+                    stream = new FileStream(path, mode);
+                }
+                catch (IOException)
+                {
+                    Console.WriteLine($"[Error] IOExcepthion raised while opening FileStream, retry... ({tryCount}) ");
+                    tryCount++;
+                    System.Threading.Thread.Sleep(1000);
+                    continue;
+                }
+
+                if (stream != null)
+                {
+                    return new StreamReader(stream);
+                }
+            }
+
+            throw new IOException($"Opening FileStream({path}, {mode}) is failed ({tryCount} tries)");
+        }
 
         private static void OnChanged(object source, FileSystemEventArgs e)
         {

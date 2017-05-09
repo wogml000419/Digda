@@ -21,8 +21,7 @@ namespace Digda
         {
             List<string> list = ReadLog(logFile);
 
-            FileStream stream = new FileStream(logFile, FileMode.Create);
-            StreamWriter writer = new StreamWriter(stream);
+            StreamWriter writer = Digda.WaitAndGetWriter(logFile, FileMode.Create);
 
             bool isWrote = false;
 
@@ -53,15 +52,13 @@ namespace Digda
             }
 
             writer.Close();
-            stream.Close();
         }
 
         public static void RemoveLogContent(string logFile, string removeContent)
         {
             List<string> list = ReadLog(logFile);
 
-            FileStream stream = new FileStream(logFile, FileMode.Create);
-            StreamWriter writer = new StreamWriter(stream);
+            StreamWriter writer = Digda.WaitAndGetWriter(logFile, FileMode.Create);
 
             foreach (string s in list)
             {
@@ -73,7 +70,6 @@ namespace Digda
             }
             
             writer.Close();
-            stream.Close();
         }
 
         public static void WriteChanges()
@@ -95,8 +91,7 @@ namespace Digda
             }
 
             DateTime current = DateTime.Now;
-            FileStream stream = new FileStream(FileChangesDirPath + separator + string.Format("{0:yyyy-MM-dd HH,mm,ss}.log", current), FileMode.Create);
-            StreamWriter writer = new StreamWriter(stream);
+            StreamWriter writer = Digda.WaitAndGetWriter(FileChangesDirPath + separator + string.Format("{0:yyyy-MM-dd HH,mm,ss}.log", current), FileMode.Create);
 
             writer.WriteLine("{0:yyyy-MM-dd HH:mm:ss} => {1:yyyy-MM-dd HH:mm:ss}", LastShow, current);
             LastShow = current;
@@ -107,7 +102,6 @@ namespace Digda
             }
 
             writer.Close();
-            stream.Close();
 
             File.Delete(DigChangeLogPath);
             File.Delete(DeletedFilesLogPath);
@@ -153,8 +147,7 @@ namespace Digda
                 }
             }
 
-            FileStream stream = new FileStream(logPath, FileMode.Create);
-            StreamWriter writer = new StreamWriter(stream);
+            StreamWriter writer = Digda.WaitAndGetWriter(logPath, FileMode.Create);
 
             foreach (string s in log)   //변화량 0인건 적히지 않게
             {
@@ -189,15 +182,13 @@ namespace Digda
             }
 
             writer.Close();
-            stream.Close();
 
             RemoveLogContent(DigChangeLogPath, Path.GetFileName(logPath));
         }
 
         private static List<string> ReadLog(string path)
         {
-            FileStream stream = new FileStream(path, FileMode.OpenOrCreate);
-            StreamReader reader = new StreamReader(stream);
+            StreamReader reader = Digda.WaitAndGetReader(path, FileMode.OpenOrCreate);
             List<string> list = new List<string>();
 
             while(true)
@@ -209,7 +200,6 @@ namespace Digda
             }
 
             reader.Close();
-            stream.Close();
             return list;
         }
 
