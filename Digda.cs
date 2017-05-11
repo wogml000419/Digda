@@ -87,7 +87,7 @@ namespace Digda
                 else if (command.Equals("s") || command.Equals("show"))
                 {
                     DigdaSysLog.WriteChanges();
-                    Console.WriteLine($"[System] ChangeLog wrote at {DigdaSysLog.FileChangesDirPath}");
+                    Console.WriteLine($"[System] ChangeLog written at {DigdaSysLog.FileChangesDirPath}");
                 }
                 else if(command.Equals("h") || command.Equals("help"))
                 {

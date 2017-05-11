@@ -23,7 +23,7 @@ namespace Digda
 
             StreamWriter writer = Digda.WaitAndGetWriter(logFile, FileMode.Create);
 
-            bool isWrote = false;
+            bool isWritten = false;
 
             if (list.Count == 0)
             {
@@ -33,19 +33,19 @@ namespace Digda
             {
                 foreach(string s in list)
                 {
-                    if (isWrote == false && string.Compare(content, s, true) < 0)
+                    if (isWritten == false && string.Compare(content, s, true) < 0)
                     {
                         writer.WriteLine(content);
-                        isWrote = true;
+                        isWritten = true;
                     }
-                    else if (isWrote == false && content.Equals(s))
+                    else if (isWritten == false && content.Equals(s))
                     {
-                        isWrote = true;
+                        isWritten = true;
                     }
                     writer.WriteLine(s);
                 }
 
-                if (isWrote == false)
+                if (isWritten == false)
                 {
                     writer.WriteLine(content);
                 }
@@ -69,6 +69,42 @@ namespace Digda
                 writer.WriteLine(s);
             }
             
+            writer.Close();
+        }
+
+        public static void ChangeLogContent(string logFile, string oldContent, string newContent)
+        {
+            List<string> list = ReadLog(logFile);
+            List<string> final = new List<string>(list.Count);
+
+            StreamWriter writer = Digda.WaitAndGetWriter(logFile, FileMode.Create);
+
+            bool isExists = false;
+            foreach (string s in list)
+            {
+                if (s.Equals(oldContent))
+                {
+                    isExists = true;
+                    continue;
+                }
+                final.Add(s);
+            }
+
+            foreach(string s in final)
+            {
+                if(isExists && string.Compare(newContent, s, true) < 0)
+                {
+                    writer.WriteLine(newContent);
+                    isExists = false;
+                }
+                writer.WriteLine(s);
+            }
+
+            if(isExists)
+            {
+                writer.WriteLine(newContent);
+            }
+
             writer.Close();
         }
 
@@ -110,6 +146,8 @@ namespace Digda
         }
         private static void WriteChanges(string logPath, int depth)
         {
+            RemoveLogContent(DigChangeLogPath, Path.GetFileName(logPath));
+
             Console.WriteLine($"[Debug] {logPath}");
             List<string> log = ReadLog(logPath);
             List<string> deleted = ReadLog(DeletedFilesLogPath);
@@ -182,8 +220,6 @@ namespace Digda
             }
 
             writer.Close();
-
-            RemoveLogContent(DigChangeLogPath, Path.GetFileName(logPath));
         }
 
         private static List<string> ReadLog(string path)

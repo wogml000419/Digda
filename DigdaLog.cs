@@ -97,13 +97,13 @@ namespace Digda
 
             StreamWriter writer = Digda.WaitAndGetWriter(path, FileMode.Create);
 
-            bool isWrote = false;
+            bool isWritten = false;
             for (int i = 0; i < list.Count; i++)
             {
-                if (isWrote == false && FileInfoCompare(content, list[i]) < 0)
+                if (isWritten == false && FileInfoCompare(content, list[i]) < 0)
                 {
                     writer.WriteLine(content);
-                    isWrote = true;
+                    isWritten = true;
                 }
                 writer.WriteLine(list[i]);
             }
@@ -126,10 +126,12 @@ namespace Digda
             }
             catch(System.UnauthorizedAccessException)
             {
+                System.Console.WriteLine($"[Error] Cannot make FileInfo({fileFullPath}) because access is denied.");
                 return;
             }
             catch(FileNotFoundException)
             {
+                System.Console.WriteLine($"[Error] Cannot make FileInfo({fileFullPath}) because file does not exist.");
                 return;
             }
         }
@@ -239,11 +241,21 @@ namespace Digda
             }
             else if(Directory.Exists(newFile))
             {
-                DirectoryInfo dir = new DirectoryInfo(newFile);
-                long size = Digda.GetDirectorySize(dir, 0);
-                newContent = MakeDirectoryInfos(dir, size, size);
+                List<string> tmpList = ReadLogFile(GetLogFilePath(Path.GetFileName(oldFile)));
+                if (tmpList.Count > 0)
+                {
+                    string thisInfo = tmpList[tmpList.Count - 1];
+                    long size = GetSize(thisInfo);
+                    long addSize = GetAddSize(thisInfo);
 
-                DeleteLogAndChilds(oldFile);
+                    newContent = MakeDirectoryInfos(newFile, size, addSize);
+                }
+                else
+                {
+                    newContent = MakeDirectoryInfos(newFile, 0, 0);
+                }
+
+                RenameLogAndChilds(oldFile, newFile);
             }
             else
             {
@@ -256,7 +268,7 @@ namespace Digda
             StreamWriter writer = Digda.WaitAndGetWriter(path, FileMode.Create);
 
             bool isRemoved = false;
-            bool isWrote = false;
+            bool isWritten = false;
 
             foreach (string s in list)
             {
@@ -265,10 +277,10 @@ namespace Digda
                     isRemoved = true;
                     continue;
                 }
-                if (isWrote == false && FileInfoCompare(newContent, s) < 0)
+                if (isWritten == false && FileInfoCompare(newContent, s) < 0)
                 {
                     writer.WriteLine(newContent);
-                    isWrote = true;
+                    isWritten = true;
                 }
                 writer.WriteLine(s);
             }
@@ -389,6 +401,39 @@ namespace Digda
 
             File.Delete(logFilePath);
             DigdaSysLog.RemoveLogContent(DigdaSysLog.DigChangeLogPath, Path.GetFileName(logFilePath));
+        }
+
+        private static void RenameLogAndChilds(string oldDirPath, string newDirPath)
+        {
+            string oldLogFilePath = GetLogFilePath(oldDirPath);
+            string newLogFilePath = GetLogFilePath(newDirPath);
+            if (File.Exists(oldLogFilePath) == false)
+                return;
+
+            List<string> list = ReadLogFile(oldLogFilePath);
+
+            StreamWriter writer = Digda.WaitAndGetWriter(oldLogFilePath, FileMode.Create);
+
+            foreach (string s in list)
+            {
+                string content = s;
+                FileType type = GetFileType(s);
+                if(type == FileType.Directory)
+                {
+                    string dir = GetFileName(s);
+                    RenameLogAndChilds(oldDirPath + separator + dir, newDirPath + separator + dir);
+                }
+                else if(type == FileType.This)
+                {
+                    content = MakeThisDirInfos(newDirPath, GetSize(s), GetAddSize(s));
+                }
+                writer.WriteLine(content);
+            }
+
+            writer.Close();
+
+            File.Move(oldLogFilePath, newLogFilePath);
+            DigdaSysLog.ChangeLogContent(DigdaSysLog.DigChangeLogPath, Path.GetFileName(oldLogFilePath), Path.GetFileName(newLogFilePath));
         }
 
 
